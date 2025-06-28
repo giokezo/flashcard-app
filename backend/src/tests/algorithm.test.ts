@@ -335,3 +335,55 @@ it('should handle card not found in any bucket', () => {
 
 });
 
+describe('getHint', () => {
+  it('should return existing hint when available and non-empty', () => {
+    const cardWithHint = new Flashcard("Test", "Answer", "cat", "Simple addition", []);
+    const result = getHint(cardWithHint);
+    expect(result).toBe('Simple addition');
+  });
+
+  it('should generate hint from front when existing hint is empty', () => {
+    const cardWithEmptyHint = new Flashcard("Hello in Spanish", "Hola", "lang", "", []);
+    const result = getHint(cardWithEmptyHint);
+    expect(result).toBe('Hel*************'); // 13 stars
+  });
+
+  it('should handle very short fronts (≤3 characters)', () => {
+    const shortCard = new Flashcard("Hi", "Hello", "greeting", "", []);
+    const result = getHint(shortCard);
+    expect(result).toBe('H*');
+  });
+
+  it('should handle single character front', () => {
+    const singleCharCard = new Flashcard("A", "Letter A", "alphabet", "", []);
+    const result = getHint(singleCharCard);
+    expect(result).toBe('A');
+  });
+
+  it('should handle exactly 3 character front', () => {
+    const threeCharCard = new Flashcard("Cat", "Animal", "animals", "", []);
+    const result = getHint(threeCharCard);
+    expect(result).toBe('C**');
+  });
+
+  it('should handle 4+ character front', () => {
+    const longCard = new Flashcard("Elephant", "Large mammal", "animals", "", []);
+    const result = getHint(longCard);
+    expect(result).toBe('Ele*****');
+  });
+
+  it('should handle whitespace-only hint as empty', () => {
+    const whitespaceHintCard = new Flashcard("Test", "Answer", "cat", "   \t\n  ", []);
+    const result = getHint(whitespaceHintCard);
+    expect(result).toBe('Tes*');
+  });
+
+  it('should handle undefined hint', () => {
+  const card = new Flashcard("Testing", "Answer", "cat", "", []);
+
+  const result = getHint(card);
+
+  expect(result).toBe('Tes****');  // The fallback result from "Testing"
+});
+});
+
