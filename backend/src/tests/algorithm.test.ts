@@ -244,3 +244,94 @@ describe('practice', () => {
     expect(result).not.toBe(buckets[0]);
   });
 });
+
+describe('update', () => {
+  it('should move card from bucket 0 to bucket 2 on Easy answer', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const testBucketMap = new Map([[0, new Set([card])]]);
+    
+    const result = update(testBucketMap, card, AnswerDifficulty.Easy);
+    
+    expect(result.get(2)?.has(card)).toBe(true);
+  });
+
+  it('should move card from bucket 2 to bucket 3 on Hard answer', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const testBucketMap = new Map([[2, new Set([card])]]);
+    
+    const result = update(testBucketMap, card, AnswerDifficulty.Hard);
+    
+    expect(result.get(3)?.has(card)).toBe(true);
+  });
+
+  it('should move card to bucket 0 on Wrong answer', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const testBucketMap = new Map([[5, new Set([card])]]);
+    
+    const result = update(testBucketMap, card, AnswerDifficulty.Wrong);
+    
+    expect(result.get(0)?.has(card)).toBe(true);
+  });
+
+  it('should cap bucket advancement at 7 for Easy answers', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const highBucketMap = new Map([[6, new Set([card])]]);
+    const result = update(highBucketMap, card, AnswerDifficulty.Easy);
+    
+    expect(result.get(7)?.has(card)).toBe(true);
+    expect(result.has(8)).toBe(false);
+  });
+
+  it('should cap bucket advancement at 7 for Hard answers', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const highBucketMap = new Map([[7, new Set([card])]]);
+    const result = update(highBucketMap, card, AnswerDifficulty.Hard);
+    
+    expect(result.get(7)?.has(card)).toBe(true);
+    expect(result.has(8)).toBe(false);
+  });
+
+  it('should create new bucket if it does not exist', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const sparseBucketMap = new Map([[0, new Set([card])]]);
+    const result = update(sparseBucketMap, card, AnswerDifficulty.Easy);
+    
+    expect(result.has(2)).toBe(true);
+    expect(result.get(2)?.has(card)).toBe(true);
+  });
+
+  it('should remove empty buckets after card removal', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const singleCardBucket = new Map([[3, new Set([card])]]);
+    const result = update(singleCardBucket, card, AnswerDifficulty.Wrong);
+    
+    expect(result.has(3)).toBe(false);
+    expect(result.get(0)?.has(card)).toBe(true);
+  });
+
+it('should mutate the original bucket map (since Sets are shared)', () => {
+  const card = new Flashcard("Test", "Answer", "cat", "", []);
+  const testBucketMap = new Map([[0, new Set([card])]]);
+  const result = update(testBucketMap, card, AnswerDifficulty.Easy);
+
+  // The original bucket no longer has the card
+  expect(testBucketMap.get(0)?.has(card)).toBe(false);
+
+  // The new bucket exists in the result map (not in the original)
+  expect(result.get(2)?.has(card)).toBe(true);
+
+  expect(result).not.toBe(testBucketMap);
+});
+
+it('should handle card not found in any bucket', () => {
+  const existingCard = new Flashcard("Existing", "Card", "cat", "", []);
+  const newCard = new Flashcard("New", "Card", "cat", "", []);
+  const testBucketMap = new Map([[1, new Set([existingCard])]]);
+  const result = update(testBucketMap, newCard, AnswerDifficulty.Easy);
+
+  // Since currentBucket = -1, newBucket = Math.min(-1+2,7)=1
+  expect(result.get(1)?.has(newCard)).toBe(true);
+});
+
+});
+
