@@ -387,3 +387,123 @@ describe('getHint', () => {
 });
 });
 
+describe('computeProgress', () => {
+  it('should calculate correct total cards', () => {
+    const testBucketMap = new Map([
+      [0, new Set([
+        new Flashcard("Test1", "Answer1", "cat", "", []),
+        new Flashcard("Test2", "Answer2", "cat", "", [])
+      ])], // Beginner: 2 cards
+      [1, new Set([new Flashcard("Test3", "Answer3", "cat", "", [])])], // Beginner: 1 card
+      [2, new Set([new Flashcard("Test4", "Answer4", "cat", "", [])])], // Intermediate: 1 card
+      [4, new Set([new Flashcard("Test5", "Answer5", "cat", "", [])])], // Intermediate: 1 card
+      [6, new Set([new Flashcard("Test6", "Answer6", "cat", "", [])])] // Advanced: 1 card
+    ]);
+
+    const testHistory: PracticeRecord[] = [];
+    const result = computeProgress(testBucketMap, testHistory);
+    
+    expect(result.totalCards).toBe(6);
+  });
+
+  it('should calculate correct stage breakdown', () => {
+    const testBucketMap = new Map([
+      [0, new Set([
+        new Flashcard("Test1", "Answer1", "cat", "", []),
+        new Flashcard("Test2", "Answer2", "cat", "", [])
+      ])], // Beginner: 2 cards
+      [1, new Set([new Flashcard("Test3", "Answer3", "cat", "", [])])], // Beginner: 1 card
+      [2, new Set([new Flashcard("Test4", "Answer4", "cat", "", [])])], // Intermediate: 1 card
+      [4, new Set([new Flashcard("Test5", "Answer5", "cat", "", [])])], // Intermediate: 1 card
+      [6, new Set([new Flashcard("Test6", "Answer6", "cat", "", [])])] // Advanced: 1 card
+    ]);
+
+    const testHistory: PracticeRecord[] = [];
+    const result = computeProgress(testBucketMap, testHistory);
+    
+    expect(result.stageBreakdown).toHaveLength(3);
+    
+    // Beginner stage (buckets 0-1): 3 cards
+    const beginnerStage = result.stageBreakdown.find(stage => stage.stage === 'Beginner');
+    expect(beginnerStage).toEqual({
+      stage: 'Beginner',
+      cardCount: 3,
+      percentage: 50
+    });
+
+    // Intermediate stage (buckets 2-4): 2 cards
+    const intermediateStage = result.stageBreakdown.find(stage => stage.stage === 'Intermediate');
+    expect(intermediateStage).toEqual({
+      stage: 'Intermediate',
+      cardCount: 2,
+      percentage: (2/6) * 100
+    });
+
+    // Advanced stage (buckets 5-7): 1 card
+    const advancedStage = result.stageBreakdown.find(stage => stage.stage === 'Advanced');
+    expect(advancedStage).toEqual({
+      stage: 'Advanced',
+      cardCount: 1,
+      percentage: (1/6) * 100
+    });
+  });
+
+  it('should handle empty bucket map', () => {
+    const emptyBucketMap = new Map<number, Set<Flashcard>>();
+    const result = computeProgress(emptyBucketMap, []);
+    
+    expect(result.totalCards).toBe(0);
+    expect(result.stageBreakdown).toHaveLength(3);
+    result.stageBreakdown.forEach(stage => {
+      expect(stage.cardCount).toBe(0);
+      expect(stage.percentage).toBeNaN(); // 0/0 = NaN
+    });
+  });
+
+  it('should handle buckets with no cards in certain stages', () => {
+    const onlyBeginnerBuckets = new Map([
+      [0, new Set([new Flashcard("Test1", "Answer1", "cat", "", [])])],
+      [1, new Set([new Flashcard("Test2", "Answer2", "cat", "", [])])]
+    ]);
+    
+    const testHistory: PracticeRecord[] = [];
+    const result = computeProgress(onlyBeginnerBuckets, testHistory);
+    
+    expect(result.totalCards).toBe(2);
+    
+    const beginnerStage = result.stageBreakdown.find(stage => stage.stage === 'Beginner');
+    expect(beginnerStage?.cardCount).toBe(2);
+    expect(beginnerStage?.percentage).toBe(100);
+    
+    const intermediateStage = result.stageBreakdown.find(stage => stage.stage === 'Intermediate');
+    expect(intermediateStage?.cardCount).toBe(0);
+    expect(intermediateStage?.percentage).toBe(0);
+    
+    const advancedStage = result.stageBreakdown.find(stage => stage.stage === 'Advanced');
+    expect(advancedStage?.cardCount).toBe(0);
+    expect(advancedStage?.percentage).toBe(0);
+  });
+
+  it('should handle buckets beyond stage ranges', () => {
+    const bucketMapWithHighBuckets = new Map([
+      [0, new Set([new Flashcard("Test1", "Answer1", "cat", "", [])])],    // Beginner
+      [8, new Set([new Flashcard("Test2", "Answer2", "cat", "", [])])],    // Beyond Advanced (should not be counted)
+      [10, new Set([new Flashcard("Test3", "Answer3", "cat", "", [])])]    // Beyond Advanced (should not be counted)
+    ]);
+    
+    const testHistory: PracticeRecord[] = [];
+    const result = computeProgress(bucketMapWithHighBuckets, testHistory);
+    
+    expect(result.totalCards).toBe(3);
+    
+    const beginnerStage = result.stageBreakdown.find(stage => stage.stage === 'Beginner');
+    expect(beginnerStage?.cardCount).toBe(1);
+    expect(beginnerStage?.percentage).toBe((1/3) * 100);
+    
+    const intermediateStage = result.stageBreakdown.find(stage => stage.stage === 'Intermediate');
+    expect(intermediateStage?.cardCount).toBe(0);
+    
+    const advancedStage = result.stageBreakdown.find(stage => stage.stage === 'Advanced');
+    expect(advancedStage?.cardCount).toBe(0);
+  });
+});
