@@ -142,3 +142,105 @@ describe('getBucketRange', () => {
     expect(result).toBeUndefined();
   });
 });
+
+describe('practice', () => {
+  it('should include all cards from bucket 0 regardless of day', () => {
+    const card1 = new Flashcard("Test1", "Answer1", "cat", "", []);
+    const card2 = new Flashcard("Test2", "Answer2", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>([card1, card2]),
+      new Set<Flashcard>(),
+      new Set<Flashcard>()
+    ];
+
+    const day1Result = practice(buckets, 1);
+    const day7Result = practice(buckets, 7);
+
+    expect(day1Result.has(card1)).toBe(true);
+    expect(day1Result.has(card2)).toBe(true);
+    expect(day7Result.has(card1)).toBe(true);
+    expect(day7Result.has(card2)).toBe(true);
+  });
+
+  it('should include bucket 1 cards on even days only', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>(),
+      new Set<Flashcard>([card]),
+      new Set<Flashcard>()
+    ];
+
+    const day1Result = practice(buckets, 1);
+    const day2Result = practice(buckets, 2);
+    const day3Result = practice(buckets, 3);
+    const day4Result = practice(buckets, 4);
+
+    expect(day1Result.has(card)).toBe(false);
+    expect(day3Result.has(card)).toBe(false);
+    expect(day2Result.has(card)).toBe(true);
+    expect(day4Result.has(card)).toBe(true);
+  });
+
+  it('should include bucket 3 cards every 8 days', () => {
+    const card1 = new Flashcard("Test1", "Answer1", "cat", "", []);
+    const card2 = new Flashcard("Test2", "Answer2", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = Array.from({ length: 4 }, () => new Set<Flashcard>());
+    buckets[3] = new Set<Flashcard>([card1, card2]);
+
+    const day1Result = practice(buckets, 1);
+    const day8Result = practice(buckets, 8);
+    const day16Result = practice(buckets, 16);
+    const day7Result = practice(buckets, 7);
+
+    expect(day1Result.has(card1)).toBe(false);
+    expect(day1Result.has(card2)).toBe(false);
+    expect(day7Result.has(card1)).toBe(false);
+    expect(day7Result.has(card2)).toBe(false);
+
+    expect(day8Result.has(card1)).toBe(true);
+    expect(day8Result.has(card2)).toBe(true);
+    expect(day16Result.has(card1)).toBe(true);
+    expect(day16Result.has(card2)).toBe(true);
+  });
+
+  it('should include bucket 5 cards every 32 days', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = Array.from({ length: 6 }, () => new Set<Flashcard>());
+    buckets[5] = new Set<Flashcard>([card]);
+
+    const day1Result = practice(buckets, 1);
+    const day32Result = practice(buckets, 32);
+    const day64Result = practice(buckets, 64);
+    const day31Result = practice(buckets, 31);
+
+    expect(day1Result.has(card)).toBe(false);
+    expect(day31Result.has(card)).toBe(false);
+    expect(day32Result.has(card)).toBe(true);
+    expect(day64Result.has(card)).toBe(true);
+  });
+
+  it('should handle empty buckets gracefully', () => {
+    const emptyBuckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>(),
+      new Set<Flashcard>(),
+      new Set<Flashcard>()
+    ];
+    const result = practice(emptyBuckets, 1);
+
+    expect(result).toEqual(new Set());
+  });
+
+  it('should return new Set instance without mutating input', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>([card]),
+      new Set<Flashcard>(),
+      new Set<Flashcard>()
+    ];
+    const originalBuckets = buckets.map(bucket => new Set<Flashcard>(bucket));
+    const result = practice(buckets, 1);
+
+    expect(buckets).toEqual(originalBuckets);
+    expect(result).not.toBe(buckets[0]);
+  });
+});
