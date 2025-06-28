@@ -85,3 +85,60 @@ describe('toBucketSets', () => {
     }
   });
 });
+
+describe('getBucketRange', () => {
+  it('should return correct min and max bucket indices for non-empty buckets', () => {
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>([
+        new Flashcard("Test1", "Answer1", "cat", "", [])
+      ]),
+      new Set<Flashcard>(),
+      new Set<Flashcard>([
+        new Flashcard("Test2", "Answer2", "cat", "", [])
+      ]),
+      new Set<Flashcard>(),
+      new Set<Flashcard>([
+        new Flashcard("Test3", "Answer3", "cat", "", [])
+      ])
+    ];
+    const result = getBucketRange(buckets);
+    expect(result).toEqual({ minBucket: 0, maxBucket: 4 });
+  });
+
+  it('should return undefined when all buckets are empty', () => {
+    const emptyBuckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>(),
+      new Set<Flashcard>(),
+      new Set<Flashcard>()
+    ];
+    const result = getBucketRange(emptyBuckets);
+    expect(result).toBeUndefined();
+  });
+
+  it('should handle single non-empty bucket', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>(),
+      new Set<Flashcard>([card]),
+      new Set<Flashcard>()
+    ];
+    const result = getBucketRange(buckets);
+    expect(result).toEqual({ minBucket: 1, maxBucket: 1 });
+  });
+
+  it('should handle bucket at index 0 only', () => {
+    const card = new Flashcard("Test", "Answer", "cat", "", []);
+    const buckets: Array<Set<Flashcard>> = [
+      new Set<Flashcard>([card]),
+      new Set<Flashcard>(),
+      new Set<Flashcard>()
+    ];
+    const result = getBucketRange(buckets);
+    expect(result).toEqual({ minBucket: 0, maxBucket: 0 });
+  });
+
+  it('should handle empty array', () => {
+    const result = getBucketRange([] as Array<Set<Flashcard>>);
+    expect(result).toBeUndefined();
+  });
+});
